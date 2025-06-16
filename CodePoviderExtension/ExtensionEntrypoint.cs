@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Extensibility;
+using CodeProviderExtension;
+using CodePoviderExtension.MCP;
 
 namespace CodeProviderExtension
 {
@@ -36,6 +38,37 @@ namespace CodeProviderExtension
             
             // Настраиваем логирование
             serviceCollection.AddLogging();
+
+            // 🔥 РЕГИСТРАЦИЯ MCP СЕРВИСОВ
+            ConfigureMcpServices(serviceCollection);
+        }
+
+        /// <summary>
+        /// Настройка MCP сервисов для работы с Model Context Protocol
+        /// </summary>
+        private void ConfigureMcpServices(IServiceCollection services)
+        {
+            // Конфигурация MCP для локальной разработки
+            var mcpConfig = new CodeProviderExtension.McpConfiguration
+            {
+                ServerUrl = "http://localhost:3000", // my-memory сервер
+                EnableVerboseLogging = true,
+                ConnectionTimeoutMs = 10000,
+                RequestTimeoutMs = 30000,
+                EnableCaching = true,
+                CacheExpiration = 60
+            };
+
+            services.AddSingleton(mcpConfig);
+            
+            // Кэш-сервис для MCP
+            services.AddSingleton<CodePoviderExtension.MCP.McpCacheService>();
+            
+            // Основной MCP клиент
+            services.AddSingleton<CodePoviderExtension.MCP.IMcpClient, CodePoviderExtension.MCP.McpClient>();
+            
+            // Дополнительный HTTP клиент специально для MCP
+            services.AddHttpClient<CodePoviderExtension.MCP.McpClient>();
         }
     }
 

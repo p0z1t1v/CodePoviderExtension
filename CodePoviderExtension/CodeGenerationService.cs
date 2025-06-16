@@ -2,12 +2,14 @@ using System.Text.Json;
 using System.Text;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
+using CodePoviderExtension.MCP;
 
 namespace CodeProviderExtension
 {
     /// <summary>
     /// Сервис для генерации кода с использованием искусственного интеллекта.
     /// Поддерживает OpenAI API, Claude API и локальные модели.
+    /// Интегрирован с MCP для контекстно-осведомленной генерации.
     /// </summary>
     internal class CodeGenerationService : ICodeGenerationService
     {
@@ -15,23 +17,27 @@ namespace CodeProviderExtension
         private readonly ICodeAnalysisService codeAnalysisService;
         private readonly ILogger<CodeGenerationService> logger;
         private readonly AISettings aiSettings;
+        private readonly IMcpClient? mcpClient;
 
         public CodeGenerationService(
             HttpClient httpClient, 
             ICodeAnalysisService codeAnalysisService,
-            ILogger<CodeGenerationService> logger)
+            ILogger<CodeGenerationService> logger,
+            IMcpClient? mcpClient = null)
         {
             this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             this.codeAnalysisService = codeAnalysisService ?? throw new ArgumentNullException(nameof(codeAnalysisService));
             this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            this.mcpClient = mcpClient;
             this.aiSettings = AISettings.Instance;
-        }
-
-        public async Task<string> GenerateCodeAsync(string prompt, string language, CancellationToken cancellationToken = default)
+        }        public async Task<string> GenerateCodeAsync(string prompt, string language, CancellationToken cancellationToken = default)
         {
             try
             {
                 logger.LogInformation("Генерация кода для языка {Language} с помощью {Provider}", language, aiSettings.SelectedProvider);
+
+                // 🧠 Попытка получить контекст из MCP памяти
+                var mcpContext = await GetMcpContextAsync(prompt, language, cancellationToken);
 
                 if (!aiSettings.IsConfigured)
                 {
@@ -39,7 +45,7 @@ namespace CodeProviderExtension
                     return GenerateFallbackTemplate(prompt, language);
                 }
 
-                var enhancedPrompt = BuildEnhancedPrompt(prompt, language);
+                var enhancedPrompt = BuildEnhancedPrompt(prompt, language, mcpContext);
                 
                 var result = aiSettings.SelectedProvider switch
                 {
@@ -47,7 +53,11 @@ namespace CodeProviderExtension
                     AIProvider.Claude => await GenerateWithClaudeAsync(enhancedPrompt, language, cancellationToken),
                     AIProvider.Ollama => await GenerateWithOllamaAsync(enhancedPrompt, language, cancellationToken),
                     _ => GenerateFallbackTemplate(prompt, language)
-                };
+                };                // 💾 Сохраняем результат в MCP память для будущего использования
+                if (!string.IsNullOrEmpty(result) && mcpClient?.IsConnected == true)
+                {
+                    await SaveGeneratedCodeToMemoryAsync(prompt, result, language, cancellationToken);
+                }
 
                 logger.LogInformation("Код успешно сгенерирован, длина: {Length} символов", result.Length);
                 return result;
@@ -203,22 +213,6 @@ namespace CodeProviderExtension
         #endregion
 
         #region Prompt Building
-
-        private string BuildEnhancedPrompt(string prompt, string language)
-        {
-            var enhancedPrompt = new StringBuilder();
-            enhancedPrompt.AppendLine($"Создай {language} код для следующего запроса:");
-            enhancedPrompt.AppendLine(prompt);
-            enhancedPrompt.AppendLine();
-            enhancedPrompt.AppendLine("Требования:");
-            enhancedPrompt.AppendLine("- Код должен быть готов к использованию");
-            enhancedPrompt.AppendLine("- Добавь подробные комментарии");
-            enhancedPrompt.AppendLine("- Следуй лучшим практикам языка");
-            enhancedPrompt.AppendLine("- Включи обработку ошибок где это уместно");
-            enhancedPrompt.AppendLine("- Верни только код без дополнительных объяснений");
-
-            return enhancedPrompt.ToString();
-        }
 
         private string BuildRefactorPrompt(string code, string instructions)
         {
@@ -433,6 +427,106 @@ catch (Exception ex)
             code = code.Replace("?.ToString() ?? \"\"", "?.ToString() ?? string.Empty");
             
             return code;
+        }
+
+        #endregion
+
+        #region MCP Integration        /// <summary>
+        /// Получает контекст из MCP памяти для улучшения генерации кода
+        /// </summary>
+        private async Task<string> GetMcpContextAsync(string prompt, string language, CancellationToken cancellationToken)
+        {
+            if (mcpClient?.IsConnected != true)
+                return string.Empty;
+
+            try
+            {
+                // Ищем похожий код в памяти проекта
+                var searchRequest = new Dictionary<string, object>
+                {
+                    ["query"] = prompt,
+                    ["projectId"] = "CodeProviderExtension",
+                    ["maxResults"] = 3,
+                    ["artifactType"] = "CodeSnippet"
+                };                var searchResult = await mcpClient.Tools.CallToolAsync("SearchProjectArtifacts", searchRequest, cancellationToken);
+                var searchResultString = searchResult?.ToString();
+                
+                if (!string.IsNullOrEmpty(searchResultString))
+                {
+                    logger.LogInformation("Найден контекст из MCP памяти для промпта: {Prompt}", prompt);
+                    return $"\n\n--- Контекст из памяти проекта ---\n{searchResultString}\n--- Конец контекста ---\n";
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Не удалось получить контекст из MCP: {Error}", ex.Message);
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Сохраняет сгенерированный код в MCP память
+        /// </summary>
+        private async Task SaveGeneratedCodeToMemoryAsync(string prompt, string code, string language, CancellationToken cancellationToken)
+        {
+            if (mcpClient?.IsConnected != true)
+                return;
+
+            try
+            {
+                var saveRequest = new Dictionary<string, object>
+                {
+                    ["title"] = $"Сгенерированный {language} код: {prompt.Substring(0, Math.Min(prompt.Length, 50))}...",
+                    ["content"] = code,
+                    ["projectId"] = "CodeProviderExtension",
+                    ["type"] = "CodeSnippet",
+                    ["tags"] = $"generated,{language},ai",
+                    ["metadata"] = System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        originalPrompt = prompt,
+                        language = language,
+                        generatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                        provider = aiSettings.SelectedProvider.ToString()
+                    })
+                };
+
+                await mcpClient.Tools.CallToolAsync("SaveProjectArtifact", saveRequest, cancellationToken);
+                logger.LogInformation("Сгенерированный код сохранен в MCP память");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning("Не удалось сохранить код в MCP: {Error}", ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Строит улучшенный промпт с учетом MCP контекста
+        /// </summary>
+        private string BuildEnhancedPrompt(string originalPrompt, string language, string mcpContext = "")
+        {
+            var enhancedPrompt = new StringBuilder();
+            
+            enhancedPrompt.AppendLine($"Сгенерируй {language} код для следующего запроса:");
+            enhancedPrompt.AppendLine($"Запрос: {originalPrompt}");
+            enhancedPrompt.AppendLine();
+            
+            if (!string.IsNullOrEmpty(mcpContext))
+            {
+                enhancedPrompt.AppendLine("Используй следующий контекст из памяти проекта:");
+                enhancedPrompt.AppendLine(mcpContext);
+                enhancedPrompt.AppendLine();
+            }
+            
+            enhancedPrompt.AppendLine("Требования:");
+            enhancedPrompt.AppendLine("- Код должен быть чистым и читаемым");
+            enhancedPrompt.AppendLine("- Добавь комментарии для сложных участков");
+            enhancedPrompt.AppendLine("- Используй лучшие практики языка");
+            enhancedPrompt.AppendLine("- Обработай возможные ошибки");
+            enhancedPrompt.AppendLine();
+            enhancedPrompt.AppendLine("Возвращай только код без дополнительного текста.");
+
+            return enhancedPrompt.ToString();
         }
 
         #endregion
