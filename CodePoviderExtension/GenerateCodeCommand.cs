@@ -22,21 +22,24 @@ namespace CodeProviderExtension
             Icon = null,
             EnabledWhen = null,
             VisibleWhen = null
-        };
-
-        public GenerateCodeCommand(VisualStudioExtensibility extensibility) : base(extensibility)
+        };        public GenerateCodeCommand(VisualStudioExtensibility extensibility) : base(extensibility)
         {
             this.logger = new TraceSource("GenerateCodeCommand");
-        }        public override async Task ExecuteCommandAsync(IClientContext context, CancellationToken cancellationToken)
+        }
+
+        public override async Task ExecuteCommandAsync(IClientContext context, CancellationToken cancellationToken)
         {
             try
             {
-                this.logger.TraceInformation("Начало генерации кода");                // Получаем сервис генерации кода
+                this.logger.TraceInformation("Начало генерации кода");
+                
+                // Получаем сервис генерации кода
                 var httpClient = new HttpClient();
                 var loggerFactory = LoggerFactory.Create(builder => { });
                 var analysisLogger = loggerFactory.CreateLogger<CodeAnalysisService>();
+                var generationLogger = loggerFactory.CreateLogger<CodeGenerationService>();
                 var codeAnalysisService = new CodeAnalysisService(httpClient, analysisLogger);
-                var codeGenerationService = new CodeGenerationService(httpClient, codeAnalysisService);
+                var codeGenerationService = new CodeGenerationService(httpClient, codeAnalysisService, generationLogger);
 
                 // Получаем активное представление текста
                 var activeTextView = await this.Extensibility.Editor().GetActiveTextViewAsync(context, cancellationToken);

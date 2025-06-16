@@ -31,13 +31,15 @@ namespace CodeProviderExtension
         }        public override async Task ExecuteCommandAsync(IClientContext context, CancellationToken cancellationToken)
         {
             try
-            {
-                this.logger.TraceInformation("Начало рефакторинга кода");                // Получаем сервисы
+            {                this.logger.TraceInformation("Начало рефакторинга кода");
+                
+                // Получаем сервисы
                 var httpClient = new HttpClient();
                 var loggerFactory = LoggerFactory.Create(builder => { });
                 var analysisLogger = loggerFactory.CreateLogger<CodeAnalysisService>();
+                var generationLogger = loggerFactory.CreateLogger<CodeGenerationService>();
                 var codeAnalysisService = new CodeAnalysisService(httpClient, analysisLogger);
-                var codeGenerationService = new CodeGenerationService(httpClient, codeAnalysisService);
+                var codeGenerationService = new CodeGenerationService(httpClient, codeAnalysisService, generationLogger);
 
                 // Получаем активное представление текста
                 var activeTextView = await this.Extensibility.Editor().GetActiveTextViewAsync(context, cancellationToken);
