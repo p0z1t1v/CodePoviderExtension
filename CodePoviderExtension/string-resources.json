@@ -1,0 +1,14 @@
+{
+  "CodeProviderExtension.AnalyzeCode.DisplayName": "Анализ кода",
+  "CodeProviderExtension.AnalyzeCode.TooltipText": "Детальный анализ выделенного кода",
+  "CodeProviderExtension.GenerateCode.DisplayName": "Генерация кода",
+  "CodeProviderExtension.GenerateCode.TooltipText": "Генерация шаблона кода",
+  "CodeProviderExtension.RefactorCode.DisplayName": "Рефакторинг кода",
+  "CodeProviderExtension.RefactorCode.TooltipText": "Рефакторинг выделенного кода",
+  "CodeProviderExtension.SimpleGenerate.DisplayName": "Простая генерация",
+  "CodeProviderExtension.SimpleGenerate.TooltipText": "Быстрая генерация кода",
+  "CodeProviderExtension.ToggleCodeLens.DisplayName": "Переключить CodeLens",
+  "CodeProviderExtension.ToggleCodeLens.TooltipText": "Включить или отключить отображение CodeLens",
+  "CodeProviderExtension.CodeLensSettings.DisplayName": "Настройки CodeLens",
+  "CodeProviderExtension.CodeLensSettings.TooltipText": "Открыть настройки CodeLens"
+}

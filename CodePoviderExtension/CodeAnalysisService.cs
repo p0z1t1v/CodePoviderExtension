@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -13,53 +14,100 @@ namespace CodeProviderExtension
     internal class CodeAnalysisService : ICodeAnalysisService
     {
         private readonly HttpClient httpClient;
+        private readonly ILogger<CodeAnalysisService> _logger;
 
-        public CodeAnalysisService(HttpClient httpClient)
+        public CodeAnalysisService(HttpClient httpClient, ILogger<CodeAnalysisService> logger)
         {
-            this.httpClient = httpClient;
+            this.httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            this._logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<CodeAnalysisResult> AnalyzeCodeAsync(string code, string language, CancellationToken cancellationToken = default)
+        public Task<CodeAnalysisResult> AnalyzeCodeAsync(string code, string language, CancellationToken cancellationToken = default)
         {
-            var classes = new List<string>();
-            var methods = new List<string>();
-            var issues = new List<CodeIssue>();
-            var complexityScore = 1.0;
-
-            if (language.Equals("csharp", StringComparison.OrdinalIgnoreCase) || 
-                language.Equals("cs", StringComparison.OrdinalIgnoreCase))
+            try
             {
-                var result = AnalyzeCSharpCode(code);
-                classes.AddRange(result.classes);
-                methods.AddRange(result.methods);
-                issues.AddRange(result.issues);
-                complexityScore = result.complexity;
-            }
-            else
-            {
-                // Базовый анализ для других языков
-                var basicAnalysis = PerformBasicAnalysis(code, language);
-                classes.AddRange(basicAnalysis.classes);
-                methods.AddRange(basicAnalysis.methods);
-                issues.AddRange(basicAnalysis.issues);
-                complexityScore = basicAnalysis.complexity;
-            }
+                _logger.LogInformation("Начинаю анализ кода на языке {Language}", language);
 
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    _logger.LogWarning("Получен пустой код для анализа");
+                    return Task.FromResult(CreateEmptyAnalysisResult(language));
+                }
+
+                var classes = new List<string>();
+                var methods = new List<string>();
+                var issues = new List<CodeIssue>();
+                var complexityScore = 1.0;
+
+                if (language.Equals("csharp", StringComparison.OrdinalIgnoreCase) || 
+                    language.Equals("cs", StringComparison.OrdinalIgnoreCase))
+                {
+                    var analysisResult = AnalyzeCSharpCode(code);
+                    classes.AddRange(analysisResult.classes);
+                    methods.AddRange(analysisResult.methods);
+                    issues.AddRange(analysisResult.issues);
+                    complexityScore = analysisResult.complexity;
+                }
+                else
+                {
+                    // Базовый анализ для других языков
+                    var basicAnalysis = PerformBasicAnalysis(code, language);
+                    classes.AddRange(basicAnalysis.classes);
+                    methods.AddRange(basicAnalysis.methods);
+                    issues.AddRange(basicAnalysis.issues);
+                    complexityScore = basicAnalysis.complexity;
+                }
+
+                var result = new CodeAnalysisResult
+                {
+                    Language = language,
+                    LineCount = code.Split('\n').Length,
+                    CharacterCount = code.Length,
+                    Classes = classes,
+                    Methods = methods,
+                    Issues = issues,
+                    ComplexityScore = complexityScore
+                };
+
+                _logger.LogInformation("Анализ кода завершен успешно. Найдено: {ClassCount} классов, {MethodCount} методов", 
+                    classes.Count, methods.Count);
+
+                return Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при анализе кода на языке {Language}", language);
+                return Task.FromResult(CreateEmptyAnalysisResult(language));
+            }
+        }
+
+        private CodeAnalysisResult CreateEmptyAnalysisResult(string language)
+        {
             return new CodeAnalysisResult
             {
                 Language = language,
-                LineCount = code.Split('\n').Length,
-                CharacterCount = code.Length,
-                Classes = classes,
-                Methods = methods,
-                Issues = issues,
-                ComplexityScore = complexityScore
+                LineCount = 0,
+                CharacterCount = 0,
+                Classes = new List<string>(),
+                Methods = new List<string>(),
+                Issues = new List<CodeIssue>(),
+                ComplexityScore = 0.0
             };
         }
 
-        public async Task<IEnumerable<CodeSuggestion>> GetSuggestionsAsync(string code, string language, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<CodeSuggestion>> GetSuggestionsAsync(string code, string language, CancellationToken cancellationToken = default)
         {
-            var suggestions = new List<CodeSuggestion>();
+            try
+            {
+                _logger.LogInformation("Генерирую предложения для кода на языке {Language}", language);
+
+                if (string.IsNullOrWhiteSpace(code))
+                {
+                    _logger.LogWarning("Получен пустой код для генерации предложений");
+                    return Task.FromResult(Enumerable.Empty<CodeSuggestion>());
+                }
+
+                var suggestions = new List<CodeSuggestion>();
 
             // Проверка на типичные проблемы производительности
             if (code.Contains("StringBuilder") && code.Contains("+="))
@@ -98,7 +146,14 @@ namespace CodeProviderExtension
                 suggestions.AddRange(publicMethodSuggestions);
             }
 
-            return suggestions;
+            _logger.LogInformation("Сгенерировано {Count} предложений для улучшения кода", suggestions.Count);
+            return Task.FromResult<IEnumerable<CodeSuggestion>>(suggestions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Ошибка при генерации предложений для кода на языке {Language}", language);
+                return Task.FromResult(Enumerable.Empty<CodeSuggestion>());
+            }
         }
 
         private (List<string> classes, List<string> methods, List<CodeIssue> issues, double complexity) AnalyzeCSharpCode(string code)

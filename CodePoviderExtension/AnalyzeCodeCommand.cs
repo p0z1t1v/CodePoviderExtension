@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text;
 using Microsoft;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Commands;
 using Microsoft.VisualStudio.Extensibility.Shell;
@@ -14,7 +17,6 @@ namespace CodeProviderExtension
     internal class AnalyzeCodeCommand : Command
     {
         private readonly TraceSource logger;
-        private readonly ICodeAnalysisService codeAnalysisService;
 
         public override CommandConfiguration CommandConfiguration
         {
@@ -23,7 +25,7 @@ namespace CodeProviderExtension
                 return new("%CodeProviderExtension.AnalyzeCode.DisplayName%")
                 {
                     
-                    TooltipText = "Анализ кода",
+                    TooltipText = "%CodeProviderExtension.AnalyzeCode.TooltipText%",
                     Icon = null, // Укажите иконку, если необходимо
                     EnabledWhen = null, // Укажите условия включения, если необходимо
                     VisibleWhen = null // Укажите условия видимости, если необходимо
@@ -31,10 +33,9 @@ namespace CodeProviderExtension
             }
         }
 
-        public AnalyzeCodeCommand(TraceSource traceSource, ICodeAnalysisService codeAnalysisService)
+        public AnalyzeCodeCommand(VisualStudioExtensibility extensibility) : base(extensibility)
         {
-            this.logger = Requires.NotNull(traceSource, nameof(traceSource));
-            this.codeAnalysisService = Requires.NotNull(codeAnalysisService, nameof(codeAnalysisService));
+            this.logger = new TraceSource("AnalyzeCodeCommand");
         }
 
         //public override CommandConfiguration CommandConfiguration => new("%CodeProviderExtension.AnalyzeCode.DisplayName%")
@@ -48,6 +49,11 @@ namespace CodeProviderExtension
             try
             {
                 this.logger.TraceInformation("Начало детального анализа кода");
+
+                // Получаем сервис анализа кода (временное решение)
+                var loggerFactory = LoggerFactory.Create(builder => { });
+                var logger = loggerFactory.CreateLogger<CodeAnalysisService>();
+                var codeAnalysisService = new CodeAnalysisService(new HttpClient(), logger);
 
                 // Получаем активное представление текста
                 var activeTextView = await this.Extensibility.Editor().GetActiveTextViewAsync(context, cancellationToken);
@@ -91,13 +97,13 @@ namespace CodeProviderExtension
                 }
 
                 // Выполняем анализ кода
-                var analysisResult = await this.codeAnalysisService.AnalyzeCodeAsync(
+                var analysisResult = await codeAnalysisService.AnalyzeCodeAsync(
                     selectedCode, 
                     fileExtension, 
                     cancellationToken);
 
                 // Получаем предложения по улучшению
-                var suggestions = await this.codeAnalysisService.GetSuggestionsAsync(
+                var suggestions = await codeAnalysisService.GetSuggestionsAsync(
                     selectedCode, 
                     fileExtension, 
                     cancellationToken);
