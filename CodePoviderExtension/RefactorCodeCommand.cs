@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text;
 using Microsoft;
 using Microsoft.VisualStudio.Extensibility;
@@ -14,7 +15,8 @@ namespace CodeProviderExtension
     internal class RefactorCodeCommand : Command
     {
         private readonly TraceSource logger;
-        private readonly ICodeGenerationService codeGenerationService;        public override CommandConfiguration CommandConfiguration => new("%CodeProviderExtension.RefactorCode.DisplayName%")
+
+        public override CommandConfiguration CommandConfiguration => new("%CodeProviderExtension.RefactorCode.DisplayName%")
         {
             TooltipText = "%CodeProviderExtension.RefactorCode.TooltipText%",
             Icon = null,
@@ -22,17 +24,19 @@ namespace CodeProviderExtension
             VisibleWhen = null
         };
 
-        public RefactorCodeCommand(TraceSource traceSource, ICodeGenerationService codeGenerationService)
+        public RefactorCodeCommand(VisualStudioExtensibility extensibility) : base(extensibility)
         {
-            this.logger = Requires.NotNull(traceSource, nameof(traceSource));
-            this.codeGenerationService = Requires.NotNull(codeGenerationService, nameof(codeGenerationService));
-        }
-
-        public override async Task ExecuteCommandAsync(IClientContext context, CancellationToken cancellationToken)
+            this.logger = new TraceSource("RefactorCodeCommand");
+        }        public override async Task ExecuteCommandAsync(IClientContext context, CancellationToken cancellationToken)
         {
             try
             {
                 this.logger.TraceInformation("Начало рефакторинга кода");
+
+                // Получаем сервисы
+                var httpClient = new HttpClient();
+                var codeAnalysisService = new CodeAnalysisService(httpClient);
+                var codeGenerationService = new CodeGenerationService(httpClient, codeAnalysisService);
 
                 // Получаем активное представление текста
                 var activeTextView = await this.Extensibility.Editor().GetActiveTextViewAsync(context, cancellationToken);
@@ -66,15 +70,19 @@ namespace CodeProviderExtension
                         PromptOptions.OK, 
                         cancellationToken);
                     return;
-                }                // Применяем автоматический рефакторинг с улучшением читаемости
+                }
+
+                // Применяем автоматический рефакторинг с улучшением читаемости
                 var instructions = "Улучшить читаемость и применить best practices";
                 this.logger.TraceInformation($"Рефакторинг кода с инструкциями: {instructions}");
 
                 // Выполняем рефакторинг
-                var refactoredCode = await this.codeGenerationService.RefactorCodeAsync(
+                var refactoredCode = await codeGenerationService.RefactorCodeAsync(
                     selectedCode, 
                     instructions, 
-                    cancellationToken);                // Показываем результат пользователю
+                    cancellationToken);
+
+                // Показываем результат пользователю
                 var resultDialog = BuildPreviewDialog(selectedCode, refactoredCode, instructions);
                 await this.Extensibility.Shell().ShowPromptAsync(
                     resultDialog,

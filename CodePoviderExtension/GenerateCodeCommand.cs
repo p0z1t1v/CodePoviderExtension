@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using Microsoft;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Commands;
@@ -13,7 +14,8 @@ namespace CodeProviderExtension
     internal class GenerateCodeCommand : Command
     {
         private readonly TraceSource logger;
-        private readonly ICodeGenerationService codeGenerationService;        public override CommandConfiguration CommandConfiguration => new("%CodeProviderExtension.GenerateCode.DisplayName%")
+
+        public override CommandConfiguration CommandConfiguration => new("%CodeProviderExtension.GenerateCode.DisplayName%")
         {
             TooltipText = "%CodeProviderExtension.GenerateCode.TooltipText%",
             Icon = null,
@@ -21,17 +23,19 @@ namespace CodeProviderExtension
             VisibleWhen = null
         };
 
-        public GenerateCodeCommand(TraceSource traceSource, ICodeGenerationService codeGenerationService)
+        public GenerateCodeCommand(VisualStudioExtensibility extensibility) : base(extensibility)
         {
-            this.logger = Requires.NotNull(traceSource, nameof(traceSource));
-            this.codeGenerationService = Requires.NotNull(codeGenerationService, nameof(codeGenerationService));
-        }
-
-        public override async Task ExecuteCommandAsync(IClientContext context, CancellationToken cancellationToken)
+            this.logger = new TraceSource("GenerateCodeCommand");
+        }        public override async Task ExecuteCommandAsync(IClientContext context, CancellationToken cancellationToken)
         {
             try
             {
                 this.logger.TraceInformation("Начало генерации кода");
+
+                // Получаем сервис генерации кода
+                var httpClient = new HttpClient();
+                var codeAnalysisService = new CodeAnalysisService(httpClient);
+                var codeGenerationService = new CodeGenerationService(httpClient, codeAnalysisService);
 
                 // Получаем активное представление текста
                 var activeTextView = await this.Extensibility.Editor().GetActiveTextViewAsync(context, cancellationToken);
@@ -48,12 +52,14 @@ namespace CodeProviderExtension
                 // Получаем информацию о документе для определения языка
                 var documentUri = activeTextView.Document.Uri;
                 var fileName = System.IO.Path.GetFileName(documentUri.LocalPath);
-                var fileExtension = System.IO.Path.GetExtension(fileName).TrimStart('.');                // Генерируем базовый шаблон кода для текущего языка
+                var fileExtension = System.IO.Path.GetExtension(fileName).TrimStart('.');
+
+                // Генерируем базовый шаблон кода для текущего языка
                 var userPrompt = "Базовый шаблон класса";
                 this.logger.TraceInformation($"Генерация кода для запроса: {userPrompt}");
 
                 // Генерируем код
-                var generatedCode = await this.codeGenerationService.GenerateCodeAsync(
+                var generatedCode = await codeGenerationService.GenerateCodeAsync(
                     userPrompt, 
                     fileExtension, 
                     cancellationToken);

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text;
 using Microsoft;
 using Microsoft.VisualStudio.Extensibility;
@@ -14,7 +15,6 @@ namespace CodeProviderExtension
     internal class AnalyzeCodeCommand : Command
     {
         private readonly TraceSource logger;
-        private readonly ICodeAnalysisService codeAnalysisService;
 
         public override CommandConfiguration CommandConfiguration
         {
@@ -31,10 +31,9 @@ namespace CodeProviderExtension
             }
         }
 
-        public AnalyzeCodeCommand(TraceSource traceSource, ICodeAnalysisService codeAnalysisService)
+        public AnalyzeCodeCommand(VisualStudioExtensibility extensibility) : base(extensibility)
         {
-            this.logger = Requires.NotNull(traceSource, nameof(traceSource));
-            this.codeAnalysisService = Requires.NotNull(codeAnalysisService, nameof(codeAnalysisService));
+            this.logger = new TraceSource("AnalyzeCodeCommand");
         }
 
         //public override CommandConfiguration CommandConfiguration => new("%CodeProviderExtension.AnalyzeCode.DisplayName%")
@@ -48,6 +47,9 @@ namespace CodeProviderExtension
             try
             {
                 this.logger.TraceInformation("Начало детального анализа кода");
+
+                // Получаем сервис анализа кода через сервис-локатор (упрощенный подход)
+                var codeAnalysisService = new CodeAnalysisService(new HttpClient());
 
                 // Получаем активное представление текста
                 var activeTextView = await this.Extensibility.Editor().GetActiveTextViewAsync(context, cancellationToken);
@@ -91,13 +93,13 @@ namespace CodeProviderExtension
                 }
 
                 // Выполняем анализ кода
-                var analysisResult = await this.codeAnalysisService.AnalyzeCodeAsync(
+                var analysisResult = await codeAnalysisService.AnalyzeCodeAsync(
                     selectedCode, 
                     fileExtension, 
                     cancellationToken);
 
                 // Получаем предложения по улучшению
-                var suggestions = await this.codeAnalysisService.GetSuggestionsAsync(
+                var suggestions = await codeAnalysisService.GetSuggestionsAsync(
                     selectedCode, 
                     fileExtension, 
                     cancellationToken);
