@@ -8,42 +8,38 @@
   "categories": [
     "Other"
   ],
-  "extensionDependencies": [],
-  "extensionPack": [],
-  "preview": false,
-  "enableProposedApi": false,
-  "engines": {
-    "vscode": "^1.74.0"
+  "icon": {
+    "path": "icon.png"
   },
-  "activationEvents": [
-    "onStartupFinished"
-  ],
-  "main": "./extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "codeProvider.quickAnalyze",
-        "title": "Быстрый анализ кода",
-        "category": "Code Provider"
-      }
-    ],
-    "menus": {
-      "commandPalette": [
-        {
-          "command": "codeProvider.quickAnalyze",
-          "when": "editorTextFocus"
+        "name": "CodeProvider.AnalyzeCode",
+        "displayName": "Анализ кода",
+        "shortDisplayName": "Анализ",
+        "description": "Выполняет детальный анализ выбранного кода",
+        "icon": {
+          "path": "Resources\\analyze-icon.png"
         }
-      ]
-    }
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
-  },
-  "devDependencies": {
-    "@types/vscode": "^1.74.0",
-    "@types/node": "16.x",
-    "typescript": "^4.9.4"
+      },
+      {
+        "name": "CodeProvider.GenerateCode",
+        "displayName": "Генерация кода",
+        "shortDisplayName": "Генерация",
+        "description": "Генерирует код на основе описания",
+        "icon": {
+          "path": "Resources\\generate-icon.png"
+        }
+      },
+      {
+        "name": "CodeProvider.RefactorCode",
+        "displayName": "Рефакторинг кода",
+        "shortDisplayName": "Рефакторинг",
+        "description": "Улучшает структуру и качество кода",
+        "icon": {
+          "path": "Resources\\refactor-icon.png"
+        }
+      }
+    ]
   }
 }

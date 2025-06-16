@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using Microsoft;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Commands;
 using Microsoft.VisualStudio.Extensibility.Shell;
@@ -31,11 +32,11 @@ namespace CodeProviderExtension
         {
             try
             {
-                this.logger.TraceInformation("Начало рефакторинга кода");
-
-                // Получаем сервисы
+                this.logger.TraceInformation("Начало рефакторинга кода");                // Получаем сервисы
                 var httpClient = new HttpClient();
-                var codeAnalysisService = new CodeAnalysisService(httpClient);
+                var loggerFactory = LoggerFactory.Create(builder => { });
+                var analysisLogger = loggerFactory.CreateLogger<CodeAnalysisService>();
+                var codeAnalysisService = new CodeAnalysisService(httpClient, analysisLogger);
                 var codeGenerationService = new CodeGenerationService(httpClient, codeAnalysisService);
 
                 // Получаем активное представление текста

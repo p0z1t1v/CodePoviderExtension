@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
 using Microsoft;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Commands;
 using Microsoft.VisualStudio.Extensibility.Shell;
@@ -48,8 +50,10 @@ namespace CodeProviderExtension
             {
                 this.logger.TraceInformation("Начало детального анализа кода");
 
-                // Получаем сервис анализа кода через сервис-локатор (упрощенный подход)
-                var codeAnalysisService = new CodeAnalysisService(new HttpClient());
+                // Получаем сервис анализа кода (временное решение)
+                var loggerFactory = LoggerFactory.Create(builder => { });
+                var logger = loggerFactory.CreateLogger<CodeAnalysisService>();
+                var codeAnalysisService = new CodeAnalysisService(new HttpClient(), logger);
 
                 // Получаем активное представление текста
                 var activeTextView = await this.Extensibility.Editor().GetActiveTextViewAsync(context, cancellationToken);

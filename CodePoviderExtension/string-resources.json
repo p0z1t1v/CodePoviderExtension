@@ -6,5 +6,9 @@
   "CodeProviderExtension.RefactorCode.DisplayName": "Рефакторинг кода",
   "CodeProviderExtension.RefactorCode.TooltipText": "Рефакторинг выделенного кода",
   "CodeProviderExtension.SimpleGenerate.DisplayName": "Простая генерация",
-  "CodeProviderExtension.SimpleGenerate.TooltipText": "Быстрая генерация кода"
+  "CodeProviderExtension.SimpleGenerate.TooltipText": "Быстрая генерация кода",
+  "CodeProviderExtension.ToggleCodeLens.DisplayName": "Переключить CodeLens",
+  "CodeProviderExtension.ToggleCodeLens.TooltipText": "Включить или отключить отображение CodeLens",
+  "CodeProviderExtension.CodeLensSettings.DisplayName": "Настройки CodeLens",
+  "CodeProviderExtension.CodeLensSettings.TooltipText": "Открыть настройки CodeLens"
 }

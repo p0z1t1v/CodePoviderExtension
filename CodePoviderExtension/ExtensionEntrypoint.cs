@@ -28,6 +28,10 @@ namespace CodeProviderExtension
             // Регистрируем сервисы для работы с кодом
             serviceCollection.AddSingleton<ICodeAnalysisService, CodeAnalysisService>();
             serviceCollection.AddSingleton<ICodeGenerationService, CodeGenerationService>();
+            serviceCollection.AddSingleton<IDocumentationService, DocumentationService>();
+            
+            // Регистрируем простой анализатор для CodeLens
+            serviceCollection.AddSingleton<SimpleCodeLensAnalyzer>();
             
             // Добавляем HTTP клиент для внешних API
             serviceCollection.AddHttpClient();
