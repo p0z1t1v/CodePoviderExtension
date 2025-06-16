@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36203.30
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodePoviderExtension", "CodePoviderExtension\CodePoviderExtension.csproj", "{C193CAE2-BBB5-479F-AD8E-B644856F766C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C193CAE2-BBB5-479F-AD8E-B644856F766C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C193CAE2-BBB5-479F-AD8E-B644856F766C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C193CAE2-BBB5-479F-AD8E-B644856F766C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C193CAE2-BBB5-479F-AD8E-B644856F766C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {12299CBA-5416-4896-AB6E-8019BF8B4EB6}
+	EndGlobalSection
+EndGlobal

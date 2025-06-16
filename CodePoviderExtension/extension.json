@@ -1,0 +1,49 @@
+{
+  "name": "CodeProviderExtension",
+  "displayName": "Code Provider Extension",
+  "description": "Расширение для анализа и генерации кода с использованием AI",
+  "version": "1.0.0",
+  "publisher": "CodeProvider",
+  "license": "MIT",
+  "categories": [
+    "Other"
+  ],
+  "extensionDependencies": [],
+  "extensionPack": [],
+  "preview": false,
+  "enableProposedApi": false,
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeProvider.quickAnalyze",
+        "title": "Быстрый анализ кода",
+        "category": "Code Provider"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "codeProvider.quickAnalyze",
+          "when": "editorTextFocus"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  }
+}

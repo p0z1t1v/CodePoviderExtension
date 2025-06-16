@@ -1,0 +1,9 @@
+{
+  "CodeProviderExtension.Command1.DisplayName": "Прочитать код документа",
+  "CodeProviderExtension.AnalyzeCodeCommand.DisplayName": "Анализировать код",
+  "CodeProviderExtension.AnalyzeCodeCommand.ToolTip": "Выполняет детальный анализ активного документа с предоставлением рекомендаций по улучшению",
+  "CodeProviderExtension.GenerateCodeCommand.DisplayName": "Сгенерировать код",
+  "CodeProviderExtension.GenerateCodeCommand.ToolTip": "Генерирует код на основе описания пользователя",
+  "CodeProviderExtension.RefactorCodeCommand.DisplayName": "Рефакторить выделенный код",
+  "CodeProviderExtension.RefactorCodeCommand.ToolTip": "Рефакторит выделенный фрагмент кода согласно инструкциям пользователя"
+}
