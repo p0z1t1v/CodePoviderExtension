@@ -10,5 +10,7 @@
   "CodeProviderExtension.ToggleCodeLens.DisplayName": "Переключить CodeLens",
   "CodeProviderExtension.ToggleCodeLens.TooltipText": "Включить или отключить отображение CodeLens",
   "CodeProviderExtension.CodeLensSettings.DisplayName": "Настройки CodeLens",
-  "CodeProviderExtension.CodeLensSettings.TooltipText": "Открыть настройки CodeLens"
+  "CodeProviderExtension.CodeLensSettings.TooltipText": "Открыть настройки CodeLens",
+  "CodeProviderExtension.DemoCodeLens.DisplayName": "🎯 Демо CodeLens анализа",
+  "CodeProviderExtension.DemoCodeLens.TooltipText": "Демонстрация анализа текущего файла с помощью CodeLens"
 }

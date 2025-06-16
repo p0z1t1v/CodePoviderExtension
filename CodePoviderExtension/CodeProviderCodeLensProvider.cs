@@ -4,11 +4,11 @@ using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.Editor;
 
 namespace CodeProviderExtension
-{
-    /// <summary>
-    /// Упрощенный провайдер CodeLens для демонстрации концепции.
+{    /// <summary>
+    /// УСТАРЕВШИЙ провайдер CodeLens - заменен на EnhancedCodeLensProvider.
+    /// Оставлен для совместимости.
     /// </summary>
-    [VisualStudioContribution]
+    // [VisualStudioContribution] - ОТКЛЮЧЕН
     internal class CodeProviderCodeLensProvider : ExtensionPart, ITextViewOpenClosedListener, ITextViewChangedListener
     {
         private readonly SimpleCodeLensAnalyzer codeLensAnalyzer;

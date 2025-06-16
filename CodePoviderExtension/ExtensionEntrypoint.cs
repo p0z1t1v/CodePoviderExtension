@@ -18,9 +18,7 @@ namespace CodeProviderExtension
                     publisherName: "CodeProvider Team",
                     displayName: "Code Provider Extension",
                     description: "Мощное расширение для анализа, генерации и рефакторинга кода с поддержкой искусственного интеллекта"),
-        };
-
-        /// <inheritdoc />
+        };        /// <inheritdoc />
         protected override void InitializeServices(IServiceCollection serviceCollection)
         {
             base.InitializeServices(serviceCollection);
@@ -30,7 +28,7 @@ namespace CodeProviderExtension
             serviceCollection.AddSingleton<ICodeGenerationService, CodeGenerationService>();
             serviceCollection.AddSingleton<IDocumentationService, DocumentationService>();
             
-            // Регистрируем простой анализатор для CodeLens
+            // Регистрируем анализаторы для CodeLens
             serviceCollection.AddSingleton<SimpleCodeLensAnalyzer>();
             
             // Добавляем HTTP клиент для внешних API
