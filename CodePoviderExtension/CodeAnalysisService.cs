@@ -19,7 +19,7 @@ namespace CodeProviderExtension
             this.httpClient = httpClient;
         }
 
-        public async Task<CodeAnalysisResult> AnalyzeCodeAsync(string code, string language, CancellationToken cancellationToken = default)
+        public Task<CodeAnalysisResult> AnalyzeCodeAsync(string code, string language, CancellationToken cancellationToken = default)
         {
             var classes = new List<string>();
             var methods = new List<string>();
@@ -29,11 +29,11 @@ namespace CodeProviderExtension
             if (language.Equals("csharp", StringComparison.OrdinalIgnoreCase) || 
                 language.Equals("cs", StringComparison.OrdinalIgnoreCase))
             {
-                var result = AnalyzeCSharpCode(code);
-                classes.AddRange(result.classes);
-                methods.AddRange(result.methods);
-                issues.AddRange(result.issues);
-                complexityScore = result.complexity;
+                var analysisResult = AnalyzeCSharpCode(code);
+                classes.AddRange(analysisResult.classes);
+                methods.AddRange(analysisResult.methods);
+                issues.AddRange(analysisResult.issues);
+                complexityScore = analysisResult.complexity;
             }
             else
             {
@@ -45,7 +45,7 @@ namespace CodeProviderExtension
                 complexityScore = basicAnalysis.complexity;
             }
 
-            return new CodeAnalysisResult
+            var result = new CodeAnalysisResult
             {
                 Language = language,
                 LineCount = code.Split('\n').Length,
@@ -55,9 +55,11 @@ namespace CodeProviderExtension
                 Issues = issues,
                 ComplexityScore = complexityScore
             };
+
+            return Task.FromResult(result);
         }
 
-        public async Task<IEnumerable<CodeSuggestion>> GetSuggestionsAsync(string code, string language, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<CodeSuggestion>> GetSuggestionsAsync(string code, string language, CancellationToken cancellationToken = default)
         {
             var suggestions = new List<CodeSuggestion>();
 
@@ -98,7 +100,7 @@ namespace CodeProviderExtension
                 suggestions.AddRange(publicMethodSuggestions);
             }
 
-            return suggestions;
+            return Task.FromResult<IEnumerable<CodeSuggestion>>(suggestions);
         }
 
         private (List<string> classes, List<string> methods, List<CodeIssue> issues, double complexity) AnalyzeCSharpCode(string code)

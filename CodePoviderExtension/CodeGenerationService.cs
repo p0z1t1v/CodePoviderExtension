@@ -18,22 +18,24 @@ namespace CodeProviderExtension
             this.codeAnalysisService = codeAnalysisService;
         }
 
-        public async Task<string> GenerateCodeAsync(string prompt, string language, CancellationToken cancellationToken = default)
+        public Task<string> GenerateCodeAsync(string prompt, string language, CancellationToken cancellationToken = default)
         {
             try
             {
                 // Для демонстрации генерируем простой шаблон кода
-                return language.ToLowerInvariant() switch
+                var result = language.ToLowerInvariant() switch
                 {
                     "csharp" or "cs" => GenerateCSharpTemplate(prompt),
                     "javascript" or "js" => GenerateJavaScriptTemplate(prompt),
                     //"python" or "py" => GeneratePythonTemplate(prompt),
                     _ => GenerateGenericTemplate(prompt, language)
                 };
+                
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
-                return $"// Ошибка генерации кода: {ex.Message}";
+                return Task.FromResult($"// Ошибка генерации кода: {ex.Message}");
             }
         }
 

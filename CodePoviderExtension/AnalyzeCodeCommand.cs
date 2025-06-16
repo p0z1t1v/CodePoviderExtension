@@ -23,7 +23,7 @@ namespace CodeProviderExtension
                 return new("%CodeProviderExtension.AnalyzeCode.DisplayName%")
                 {
                     
-                    TooltipText = "Анализ кода",
+                    TooltipText = "%CodeProviderExtension.AnalyzeCode.TooltipText%",
                     Icon = null, // Укажите иконку, если необходимо
                     EnabledWhen = null, // Укажите условия включения, если необходимо
                     VisibleWhen = null // Укажите условия видимости, если необходимо
